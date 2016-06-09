@@ -82,4 +82,4 @@ print im_totals
 
 print
 print
-print "================ Program done ================"
+print "================ JPGs Generator done ================"
