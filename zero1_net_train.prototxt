@@ -9,10 +9,34 @@ layer {
   }
 }
 layer {
-  name: "score"
-  type: "InnerProduct"
+  name: "conv1"
+  type: "Convolution"
   bottom: "data"
-  top: "score"
+  top: "conv1"
+  convolution_param {
+    num_output: 10
+    kernel_size: 3
+    weight_filler {
+      type: "xavier"
+    }
+  }
+}
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "fc1"
+  type: "InnerProduct"
+  bottom: "pool1"
+  top: "fc1"
   inner_product_param {
     num_output: 10
     weight_filler {
@@ -21,9 +45,21 @@ layer {
   }
 }
 layer {
-  name: "loss"
+  name: "fc2"
+  type: "InnerProduct"
+  bottom: "fc1"
+  top: "fc2"
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "xavier"
+    }
+  }
+}
+layer {
+  name: "prob"
   type: "SoftmaxWithLoss"
-  bottom: "score"
+  bottom: "fc2"
   bottom: "label"
-  top: "loss"
+  top: "prob"
 }

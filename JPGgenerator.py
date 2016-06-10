@@ -75,7 +75,7 @@ for im_str in im_strs:
 		file_name = str(im_num) + '_' + str(im_label) + 'image.jpg'
 		create_jpg(im_float, image_folder + file_name)
 
-		writeTextLine(image_folder + im_ref_file_name, file_name + ' ' + str(im_label))
+		writeTextLine(image_folder + im_ref_file_name, image_folder + file_name + ' ' + str(im_label))
 
 print im_totals
 
