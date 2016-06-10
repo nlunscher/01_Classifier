@@ -14,47 +14,63 @@ import caffe
 # Setup model
 caffe.set_mode_cpu()
 
-model_def = 'zero1_net_train.prototxt'
-model_weights = 'zero1_net_snap_iter_100.caffemodel'
+##### Re place the last layer (soft max with loss) with this softmax one
+# layer {
+#   name: "loss"
+#   type: "Softmax"
+#   bottom: "prob"
+#   top: "loss"
+# }
+
+model_def = 'zero1_net_deploy.prototxt'
+model_weights = 'zero1_net_test.caffemodel'
 
 net = caffe.Net(model_def,		#defines the structure of the mdoel
 				model_weights,	# contains the trained weights
 				caffe.TEST)		# use test mode (e.g. dont perform dropout) - leave out nodes during testinf to help prevent overfitting
 
+print
+print "Model Loaded"
+print
+
+
+
 transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
 transformer.set_transpose('data', (2,0,1))
+transformer.set_raw_scale('data', 255)
 
 
-# set the size of the input
-# net.blobs['data'].reshape(	1,		# batch size
-# 							3,		# 3-channel (RGB) images
-# 							16,16)# image size of 227x227
+# visualize the input data
+def visualize_data(data):
+	new_data = np.zeros((16,16))
+
+	mx = np.amax(data)
+
+	for x in range(len(data[0][0][0])):
+		for y in range(len(data[0][0])):
+			 av_data = np.mean([data[0][0][y][x], data[0][1][y][x], data[0][2][y][x]])
+			 new_data[y][x] = 1 if av_data > mx*.9 else 0
+	print new_data
+
 
 
 # setup the data you want to use
 # image_file = '01_images/1_0image.jpg'
-image_file = '01_images/27_1image.jpg'
+# image_file = '01_images/27_1image.jpg'
+image_file = '01_images_test/32_0image.jpg'
 image = caffe.io.load_image(image_file)
 
 # classify the image
 net.blobs['data'].data[...] = transformer.preprocess('data', image) # copy image to memory allocated for the net
 output = net.forward() # the actual classification
-output_prob = output # the output probability vector for the first image in the batch
+predict = net.blobs['loss'].data.argmax(1)
 
-print net.blobs
-# output_other = net.blobs['prob'].data
-output_other = net.blobs['fc2'].data
+print "Data: "
+print visualize_data(net.blobs['data'].data[...])
 
-print 'Predicted class is: ', output_prob
-print 'Other Output: ', (output_other)
-
-
-net.blobs['data'].data[...] = transformer.preprocess('data', image)
-net.forward()
-print net.blobs['fc2'].data
-
-
-
+print 'Predicted class is: ', predict
+print 'Raw Output: ', net.blobs['loss'].data
+print 'Forward output: ', output
 
 
 print

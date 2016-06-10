@@ -24,24 +24,26 @@ def zero1_net(source, batch_size):
 	n.pool1 = L.Pooling(n.conv1, kernel_size = 2, stride = 2, pool = P.Pooling.MAX)
 	n.fc1 = L.InnerProduct(n.pool1, num_output = 10, weight_filler = dict(type='xavier'))
 	# n.relu1 = L.ReLU(n.fc1, in_place = True)
-	# n.prob = L.Softmax(n.fc1)
-	n.fc2 = L.InnerProduct(n.fc1, num_output = 2, weight_filler = dict(type = 'xavier'))
-	n.prob = L.SoftmaxWithLoss(n.fc2, n.label)
+	n.prob = L.InnerProduct(n.fc1, num_output = 2, weight_filler = dict(type = 'xavier'))
+	# n.loss = L.Softmax(n.prob)
+	n.loss = L.SoftmaxWithLoss(n.prob, n.label)
 
 	return n.to_proto()
 
-def create_net(source, batch_size):
-	untrained_zero1_net = zero1_net(source = dataset_source, batch_size = batch_size)
+def create_net(source, batch_size, net_type = "train"):
+	untrained_zero1_net = zero1_net(source = source, batch_size = batch_size)
 
-	with open('zero1_net_train.prototxt', 'w') as f:
+	with open('zero1_net_' + net_type + '.prototxt', 'w') as f:
 		f.write(str(untrained_zero1_net))
 
 
 # setup the CNN
-dataset_source = '01_images/im_reference.txt'
-batch_size = 10
-create_net(dataset_source, batch_size)
-
+dataset_source_test = '01_images_test/im_reference_test.txt'
+dataset_source_train = '01_images_train/im_reference_train.txt'
+batch_size_test = 1
+batch_size_train = 10
+create_net(dataset_source_test, batch_size_test, 'test')
+create_net(dataset_source_train, batch_size_train, 'train')
 
 # setup the solver
 caffe.set_mode_cpu()
@@ -84,10 +86,13 @@ print
 
 
 # train the network
-solver.solve() # the fast way, but we cant save stuff
-if False:
+fast = False
+if fast:
+	solver.solve() # the fast way, but we cant save stuff
+else:
 	niter = 30
-	test_interval = 10
+	test_interval = 5
+	test_iter = 20
 	train_loss = np.zeros(niter)
 	test_acc = np.zeros(int(np.ceil(niter / test_interval)))
 	print "Start Training..."
@@ -95,6 +100,22 @@ if False:
 		solver.step(1) # run 1 batch
 
 		train_loss[it] = solver.net.blobs['loss'].data
+
+		if it % test_interval == 0:
+			print "Iteration ", it, " Testing..."
+			correct = 0
+			for test_it in range(test_iter):
+				solver.test_nets[0].forward()
+				correct += sum(solver.test_nets[0].blobs['prob'].data.argmax(1)
+								== solver.test_nets[0].blobs['label'].data)
+				print "Classification: ", solver.test_nets[0].blobs['prob'].data.argmax(1), " Real Labels: ", solver.test_nets[0].blobs['label'].data
+				print "Data: ", solver.test_nets[0].blobs['prob'].data
+
+			test_acc[it // test_interval] = 1.0 * correct / (test_iter * batch_size_test)
+
+	solver.net.save('zero1_net_train.caffemodel')
+	solver.test_nets[0].save('zero1_net_test.caffemodel')
+
 
 ##### plot some output
 
@@ -106,6 +127,7 @@ if False:
 	ax1.set_ylabel('train loss')
 	ax2.set_ylabel('test accuracy')
 	ax2.set_title('Test Accuracy: {:.2f}'.format(test_acc[-1]))
+	print test_acc
 	plt.show()
 
 

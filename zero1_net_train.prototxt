@@ -4,7 +4,7 @@ layer {
   top: "data"
   top: "label"
   image_data_param {
-    source: "01_images/im_reference.txt"
+    source: "01_images_train/im_reference_train.txt"
     batch_size: 10
   }
 }
@@ -45,10 +45,10 @@ layer {
   }
 }
 layer {
-  name: "fc2"
+  name: "prob"
   type: "InnerProduct"
   bottom: "fc1"
-  top: "fc2"
+  top: "prob"
   inner_product_param {
     num_output: 2
     weight_filler {
@@ -57,9 +57,9 @@ layer {
   }
 }
 layer {
-  name: "prob"
+  name: "loss"
   type: "SoftmaxWithLoss"
-  bottom: "fc2"
+  bottom: "prob"
   bottom: "label"
-  top: "prob"
+  top: "loss"
 }
