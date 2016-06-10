@@ -14,6 +14,8 @@ import caffe
 # Setup model
 caffe.set_mode_cpu()
 
+#### Very important to implement this deploy stuff
+# https://github.com/BVLC/caffe/wiki/Using-a-Trained-Network:-Deploy
 ##### Re place the last layer (soft max with loss) with this softmax one
 # layer {
 #   name: "loss"
