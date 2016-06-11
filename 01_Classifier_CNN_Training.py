@@ -30,26 +30,29 @@ def zero1_net(source, batch_size):
 
 	return n.to_proto()
 
-def create_net(source, batch_size, net_type = "train"):
+def create_net(source, batch_size, folder, net_type = "train"):
 	untrained_zero1_net = zero1_net(source = source, batch_size = batch_size)
 
-	with open('zero1_net_' + net_type + '.prototxt', 'w') as f:
+	with open(folder + 'zero1_net_' + net_type + '.prototxt', 'w') as f:
 		f.write(str(untrained_zero1_net))
 
+# output model location
+model_folder = 'Model_Files/'
+model_output = model_folder + 'zero1_net_train.caffemodel'
 
 # setup the CNN
-dataset_source_test = '01_images_test/im_reference_test.txt'
-dataset_source_train = '01_images_train/im_reference_train.txt'
-batch_size_test = 1
-batch_size_train = 10
-create_net(dataset_source_test, batch_size_test, 'test')
-create_net(dataset_source_train, batch_size_train, 'train')
+dataset_source_test = '01_images/01_images_test/im_reference_test.txt'
+dataset_source_train = '01_images/01_images_train/im_reference_train.txt'
+batch_size_test = 8
+batch_size_train = 20
+create_net(dataset_source_test, batch_size_test, model_folder, 'test')
+create_net(dataset_source_train, batch_size_train, model_folder, 'train')
 
 # setup the solver
 caffe.set_mode_cpu()
 
 solver = None
-solver = caffe.SGDSolver('zero1_net_solver.prototxt')
+solver = caffe.SGDSolver(model_folder + 'zero1_net_solver.prototxt')
 
 # get a view of the model
 # check feature dimensions - (batch size, feature dim, spatial dim)
@@ -58,41 +61,14 @@ print [(k, v.data.shape) for k, v in solver.net.blobs.items()]
 print [(k, v[0].data.shape) for k, v, in solver.net.params.items()]
 print
 
-############ for testing
-# tile the first 8 items
-if False:
-	plt.figure(1)
-	solver.net.forward() # put a batch of data into the net
-	plt.imshow(solver.net.blobs['data'].data[:8, 0].transpose(1,0,2).reshape(16, 8*16), 
-			cmap = 'gray'); axis('off') # show what that data was
-	print 'Train labels: ', solver.net.blobs['label'].data[:8]
-
-	print (solver.net.params['score'][0].data)
-
-#### Stepping the solver
-# show filters before training
-	plt.figure(2)
-	plt.subplot(2,1,1)
-	plt.imshow(solver.net.params['score'][0].data[2].reshape(16,48),
-			cmap = 'gray'); axis('off')
-	#take 1 step of minibatch SGD
-	solver.step(1)
-	# check our filters after 1 step- first layer 4x5 grid of 5x5 filters
-	plt.subplot(2,1,2)
-	plt.imshow(solver.net.params['score'][0].data[2].reshape(16,48),
-			cmap = 'gray'); axis('off')
-	plt.show()
-print
-
-
 # train the network
 fast = False
 if fast:
 	solver.solve() # the fast way, but we cant save stuff
 else:
-	niter = 30
+	niter = 50
 	test_interval = 5
-	test_iter = 20
+	test_iter = 4
 	train_loss = np.zeros(niter)
 	test_acc = np.zeros(int(np.ceil(niter / test_interval)))
 	print "Start Training..."
@@ -109,12 +85,14 @@ else:
 				correct += sum(solver.test_nets[0].blobs['prob'].data.argmax(1)
 								== solver.test_nets[0].blobs['label'].data)
 				print "Classification: ", solver.test_nets[0].blobs['prob'].data.argmax(1), " Real Labels: ", solver.test_nets[0].blobs['label'].data
-				print "Data: ", solver.test_nets[0].blobs['prob'].data
+				# print "Data: ", solver.test_nets[0].blobs['prob'].data
 
 			test_acc[it // test_interval] = 1.0 * correct / (test_iter * batch_size_test)
+			print test_acc[it // test_interval]
 
-	solver.net.save('zero1_net_train.caffemodel')
-	solver.test_nets[0].save('zero1_net_test.caffemodel')
+	print "Saving model..."
+	solver.net.save(model_output)
+	# solver.test_nets[0].save('zero1_net_test.caffemodel')
 
 
 ##### plot some output
@@ -123,11 +101,11 @@ else:
 	ax2 = ax1.twinx()
 	ax1.plot(np.arange(niter), train_loss)
 	ax2.plot(test_interval * np.arange(len(test_acc)), test_acc, 'r')
-	ax1.set_xlabel('iteration')
-	ax1.set_ylabel('train loss')
-	ax2.set_ylabel('test accuracy')
+	ax1.set_xlabel('Iteration')
+	ax1.set_ylabel('Train loss')
+	ax2.set_ylabel('Test accuracy')
 	ax2.set_title('Test Accuracy: {:.2f}'.format(test_acc[-1]))
-	print test_acc
+	print "Accuracy: ", test_acc
 	plt.show()
 
 

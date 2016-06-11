@@ -23,9 +23,19 @@ caffe.set_mode_cpu()
 #   bottom: "prob"
 #   top: "loss"
 # }
+##### Also this one
+# layer {
+#   name: "data"
+#   type: "Input"
+#   top: "data"
+#   input_param { 
+#     shape: { dim: 1 dim: 3 dim: 16 dim: 16 }
+#   }
+# }
 
-model_def = 'zero1_net_deploy.prototxt'
-model_weights = 'zero1_net_test.caffemodel'
+model_folder = 'Model_Files/'
+model_def = model_folder + 'zero1_net_deploy.prototxt'
+model_weights = model_folder + 'zero1_net_train.caffemodel'
 
 net = caffe.Net(model_def,		#defines the structure of the mdoel
 				model_weights,	# contains the trained weights
@@ -57,9 +67,11 @@ def visualize_data(data):
 
 
 # setup the data you want to use
-# image_file = '01_images/1_0image.jpg'
-# image_file = '01_images/27_1image.jpg'
-image_file = '01_images_test/32_0image.jpg'
+# image_file = '01_images/01_images_test/32_0image.jpg'
+# image_file = '01_images/01_images_test/23_0image.jpg'
+# image_file = '01_images/01_images_test/26_1image.jpg'
+image_file = '01_images/01_images_test/29_1image.jpg'
+
 image = caffe.io.load_image(image_file)
 
 # classify the image

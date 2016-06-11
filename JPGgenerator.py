@@ -1,11 +1,8 @@
 # Create image jpgs from the formatted file
 
-
 import numpy as np
 import Image
 import random
-
-test_im_str = '0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 0.0000 0.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 0.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 0.0000 0.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1.0000 1.0000 1.0000 1.0000 1.0000 1.0000 1.0000 1.0000 0.0000 0.0000 0.0000 0.0000 0.0000 1 0 0 0 0 0 0 0 0 0 '
 
 # read in the image Str dataset
 def read_dataset(dataset_file_name):
@@ -52,45 +49,73 @@ def writeTextLine(file_name, line_text):
 	with open(file_name, 'a') as f:
 		f.write(line_text + '\n')
 
+# search through the database and generate the JPGs
+def generate_JPGs(data_source, im_folder, im_ref_file, digits_wanted, percent_test):
+	im_strs = read_dataset(data_source)
 
+	im_totals = np.zeros(10)
+	im_wanted = [[],[],[],[],[],[],[],[],[],[]]
+	for i in range(len(im_strs)):
+		im_label = determine_label(im_strs[i])
 
-dataset_file_name = 'SemeionHandwrittenDataset.txt'
-image_folder = '01_images'
-im_ref_file_name = 'im_reference'
-num_test = 10 # of each label
+		im_totals[im_label] += 1
 
-im_strs = read_dataset(dataset_file_name)
-random.shuffle(im_strs)
+		if im_label in digits_wanted:
+			im_wanted[im_label].append(i)
 
-im_num = 0
-im_totals = np.zeros(10)
-for im_str in im_strs:
-	im_label = determine_label(im_str)
-	# print im_label
+	# create 2 lists, one of test one of train
+	im_test = []
+	im_train = []
+	for digit in digits_wanted:
+		d_num = 0
+		d_total = im_totals[digit]
+		n_test = np.ceil(d_total * percent_test)
 
-	im_totals[im_label] += 1
+		for i in im_wanted[digit]:
+			d_num += 1
+			if d_num <= n_test:
+				im_test.append(i)
+			else:
+				im_train.append(i)
+	random.shuffle(im_test)
+	random.shuffle(im_train)
 
-	if im_label in [0, 1]:
+	im_num = 0
+	for i in im_test:
 		im_num += 1
-
-		im_float = format_image(im_str)
+		im_float = format_image(im_strs[i])		
+		im_label = determine_label(im_strs[i])
 
 		file_name = str(im_num) + '_' + str(im_label) + 'image.jpg'
+		folder = im_folder + '_test/' 
+		ref_file = im_ref_file + '_test.txt'
+		create_jpg(im_float, folder + file_name)
+		writeTextLine(folder + ref_file, folder + file_name + ' ' + str(im_label))
+	
+	for i in im_train:
+		im_num += 1
+		im_float = format_image(im_strs[i])		
+		im_label = determine_label(im_strs[i])
 
-		folder = image_folder
-		ref_file = im_ref_file_name
-		if im_totals[im_label] <= 10: # test set
-			folder += '_test/'
-			ref_file += '_test.txt'
-		else:
-			folder += '_train/'
-			ref_file += '_train.txt'
-
+		file_name = str(im_num) + '_' + str(im_label) + 'image.jpg'
+		folder = im_folder + '_train/' 
+		ref_file = im_ref_file + '_train.txt'
 		create_jpg(im_float, folder + file_name)
 		writeTextLine(folder + ref_file, folder + file_name + ' ' + str(im_label))
 
+	return im_totals
 
+
+dataset_file_name = '01_images/SemeionHandwrittenDataset.txt'
+image_folder = '01_images/01_images'
+im_ref_file_name = 'im_reference'
+percent_test = 0.10 # of each label
+digits_wanted = [0, 1]
+
+im_totals = generate_JPGs(dataset_file_name, image_folder, 
+							im_ref_file_name, digits_wanted, percent_test)
 print im_totals
+
 
 
 print
