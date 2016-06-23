@@ -69,8 +69,8 @@ def visualize_data(data):
 # setup the data you want to use
 # image_file = '01_images/01_images_test/32_0image.jpg'
 # image_file = '01_images/01_images_test/23_0image.jpg'
-# image_file = '01_images/01_images_test/26_1image.jpg'
-image_file = '01_images/01_images_test/29_1image.jpg'
+image_file = '01_images/01_images_test/26_1image.jpg'
+# image_file = '01_images/01_images_test/29_1image.jpg'
 
 image = caffe.io.load_image(image_file)
 
@@ -86,6 +86,8 @@ print 'Predicted class is: ', predict
 print 'Raw Output: ', net.blobs['loss'].data
 print 'Forward output: ', output
 
+plt.imshow(image)
+plt.show()
 
 print
 print

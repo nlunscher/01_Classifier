@@ -2,7 +2,7 @@
 
 #### Setup environment
 from pylab import *
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt # http://www.pyimagesearch.com/2015/08/24/resolved-matplotlib-figures-not-showing-up-or-displaying/
 import numpy as np
 
 # add caffe to python path
